@@ -2,7 +2,7 @@
 
 Dies ist ein einfaches Schachprojekt, das grundlegende Schachregeln enthält und eine benutzerfreundliche Schnittstelle für Spieler bietet. Unten finden Sie eine kurze Erklärung, wie Schach gespielt wird.
 
-![Chessboard](https://i.postimg.cc/5NFWBj5j/Screenshot-2025-04-14-2-02-26-PM.png)
+![Brett](https://i.postimg.cc/5NFWBj5j/Screenshot-2025-04-14-2-02-26-PM.png)
 
 ## Grundlegende Schachregeln
 
