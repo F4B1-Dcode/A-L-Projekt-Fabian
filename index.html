@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schach</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #111827;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #f97316;
+      font-size: 2.5rem;
+    }
+
+    #controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    #board {
+      width: 450px;
+      height: 450px;
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    .square {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.5rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .white { background-color: #374151; }
+    .black { background-color: #1f2937; }
+
+    select, button, input[type="range"] {
+      background-color: #f97316;
+      border: none;
+      border-radius: 10px;
+      color: white;
+      padding: 10px;
+      font-size: 1rem;
+    }
+
+    button:hover, select:hover {
+      background-color: #ea580c;
+    }
+
+    #history {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #1f2937;
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 20px;
+      width: 400px;
+    }
+
+    #history p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #d1d5db;
+    }
+
+    footer {
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <h1>Schach</h1>
+  <div id="board"></div>
+  <div id="controls">
+    <button id="newGameBtn">Neues Spiel</button>
+    <button id="undoBtn">Letzter zug</button>
+  </div>
+  <div id="history"></div>
+  <footer>Made by Fabi & FireAnimationStudios</footer>
+
+  <script>
+    const boardElement = document.getElementById('board');
+    const historyElement = document.getElementById('history');
+    let boardState = [];
+    const gameHistory = [];
+
+    const initialBoard = [
+      'r','n','b','q','k','b','n','r',
+      'p','p','p','p','p','p','p','p',
+      '','','','','','','','',
+      '','','','','','','','',
+      '','','','','','','','',
+      '','','','','','','','',
+      'P','P','P','P','P','P','P','P',
+      'R','N','B','Q','K','B','N','R'
+    ];
+
+    const pieceUnicode = {
+      'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+      'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+    };
+
+    let selected = null;
+    let isWhiteTurn = true;
+
+    function renderBoard(position = initialBoard) {
+      boardElement.innerHTML = '';
+      boardState = [...position];
+
+      for (let i = 0; i < 64; i++) {
+        const square = document.createElement('div');
+        square.className = 'square ' + ((Math.floor(i / 8) + i) % 2 === 0 ? 'white' : 'black');
+        square.dataset.index = i;
+        square.textContent = pieceUnicode[position[i]] || '';
+        square.onclick = () => handleSquareClick(i);
+        boardElement.appendChild(square);
+      }
+    }
+
+    function isWhite(piece) {
+      return piece === piece.toUpperCase();
+    }
+
+    function getRowCol(i) {
+      return [Math.floor(i / 8), i % 8];
+    }
+
+    function isValidMove(from, to) {
+      const piece = boardState[from];
+      const target = boardState[to];
+      const [fromRow, fromCol] = getRowCol(from);
+      const [toRow, toCol] = getRowCol(to);
+      const dx = toCol - fromCol;
+      const dy = toRow - fromRow;
+
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      if (!piece) return false;
+      if (target && isWhite(piece) === isWhite(target)) return false;
+
+      const dir = isWhite(piece) ? -1 : 1;
+
+      switch (piece.toLowerCase()) {
+        case 'p':
+          if (dx === 0 && !target && dy === dir) return true;
+          if (dx === 0 && !target && dy === 2 * dir && ((fromRow === 6 && isWhite(piece)) || (fromRow === 1 && !isWhite(piece)))) return true;
+          if (absDx === 1 && dy === dir && target) return true;
+          return false;
+        case 'r':
+          if (dx !== 0 && dy !== 0) return false;
+          return isPathClear(from, to);
+        case 'n':
+          return (absDx === 2 && absDy === 1) || (absDx === 1 && absDy === 2);
+        case 'b':
+          if (absDx !== absDy) return false;
+          return isPathClear(from, to);
+        case 'q':
+          if (dx === 0 || dy === 0 || absDx === absDy) return isPathClear(from, to);
+          return false;
+        case 'k':
+          return absDx <= 1 && absDy <= 1;
+        default:
+          return false;
+      }
+    }
+
+    function isPathClear(from, to) {
+      const [fromRow, fromCol] = getRowCol(from);
+      const [toRow, toCol] = getRowCol(to);
+      const dx = Math.sign(toCol - fromCol);
+      const dy = Math.sign(toRow - fromRow);
+
+      let row = fromRow + dy;
+      let col = fromCol + dx;
+
+      while (row !== toRow || col !== toCol) {
+        if (boardState[row * 8 + col] !== '') return false;
+        row += dy;
+        col += dx;
+      }
+      return true;
+    }
+
+    function handleSquareClick(i) {
+      const piece = boardState[i];
+
+      if (selected === null) {
+        if (piece && isWhite(piece) === isWhiteTurn) {
+          selected = i;
+        }
+      } else if (selected === i) {
+        selected = null;
+      } else {
+        const fromPiece = boardState[selected];
+        const toPiece = boardState[i];
+
+        if (isValidMove(selected, i)) {
+          gameHistory.push([...boardState]);
+          boardState[i] = fromPiece;
+          boardState[selected] = '';
+          isWhiteTurn = !isWhiteTurn;
+          updateBoardFromState();
+          updateHistory();
+        }
+        selected = null;
+      }
+    }
+
+    function updateBoardFromState() {
+      renderBoard(boardState);
+    }
+
+    function updateHistory() {
+      historyElement.innerHTML = gameHistory.map((state, i) => `<p>Zug ${i + 1}</p>`).join('');
+    }
+
+    document.getElementById('newGameBtn').onclick = () => {
+      boardState = [...initialBoard];
+      renderBoard(boardState);
+      gameHistory.length = 0;
+      isWhiteTurn = true;
+      updateHistory();
+    };
+
+    document.getElementById('undoBtn').onclick = () => {
+      const last = gameHistory.pop();
+      if (last) {
+        boardState = last;
+        isWhiteTurn = !isWhiteTurn;
+        updateBoardFromState();
+        updateHistory();
+      }
+    };
+
+    renderBoard();
+  </script>
+</body>
+</html>
