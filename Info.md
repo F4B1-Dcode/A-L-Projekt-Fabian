@@ -1,4 +1,4 @@
-# Schachspiel
+# Schach
 
 Dies ist ein einfaches Schachprojekt, das grundlegende Schachregeln enthält und eine benutzerfreundliche Schnittstelle für Spieler bietet. Unten finden Sie eine kurze Erklärung, wie Schach gespielt wird.
 
