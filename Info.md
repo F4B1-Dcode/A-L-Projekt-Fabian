@@ -34,6 +34,7 @@ Rufen Sie das Dokument Index.html ab und drücken sie auf das herunterladen Icon
 
 ### Mac / Chromebook 
 Doppelclicken sie das Dokument mit dem Namen Index.html oder Index.ehtml und das Dokument wird im Browser geöffnet.
+Achtung, bei Google Chrome oder generell bei Chromebooks kann es zu verzerrungen vom Spielfeld kommen.
 
 ### Windows 
 Rechtsklicken sie das Dokument und wählen sie "Öffnen mit" und dann ihren Browser aus.
